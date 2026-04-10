@@ -63,7 +63,7 @@ export default function Home() {
     setMessageError(null);
     setMessageResult(null);
     try {
-      const data = await api.post('/scan/text', { content: messageInput });
+      const data = await api.post('/scan/message', { message: messageInput });
       setMessageResult(data);
       setMessageStatus('success');
     } catch (err) {
@@ -349,7 +349,7 @@ export default function Home() {
       if (linkStatus === 'loading') return renderLoading();
       if (linkStatus === 'error') return renderError(linkError);
       if (linkStatus === 'success' && linkResult) return (
-        <div className="w-full flex-1 flex flex-col overflow-y-auto pr-4">
+        <div className="results-content w-full flex-1 flex flex-col">
           <ResultCard result={linkResult} />
         </div>
       );
@@ -366,27 +366,64 @@ export default function Home() {
       if (messageStatus === 'success' && messageResult) {
         const r = messageResult;
         return (
-          <div className={`w-full rounded-3xl border-2 p-10 flex flex-col gap-8 ${riskBg(r.risk)}`}>
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <span className={`text-5xl font-extrabold uppercase tracking-wide ${riskColor(r.risk)}`}>{r.risk}</span>
-              {r.score != null && (
-                <span className="text-3xl font-bold text-[#94a3b8]">Score: <span className="text-white">{(r.score * 100).toFixed(0)}%</span></span>
+          <div className="results-content w-full flex flex-col gap-6">
+            {/* Risk banner */}
+            <div className={`rounded-3xl border-2 p-8 flex items-center justify-between flex-wrap gap-4 ${riskBg(r.risk)}`}>
+              <div className="flex flex-col gap-1">
+                <span className="text-xl font-bold text-[#94a3b8] uppercase tracking-widest">Risk Level</span>
+                <span className={`text-5xl font-extrabold uppercase tracking-wide ${riskColor(r.risk)}`}>{r.risk}</span>
+              </div>
+              {r.is_scam != null && (
+                <span className={`rounded-full px-6 py-3 text-2xl font-bold border-2 ${r.is_scam ? 'bg-rose-950/60 border-rose-700 text-rose-400' : 'bg-emerald-950/60 border-emerald-700 text-emerald-400'}`}>
+                  {r.is_scam ? 'Likely Scam' : 'Likely Legitimate'}
+                </span>
               )}
             </div>
-            {r.flags && r.flags.length > 0 && (
-              <div className="flex flex-col gap-4">
-                <p className="text-2xl font-bold text-[#94a3b8] uppercase tracking-widest">Flags</p>
-                {r.flags.map((f, i) => (
-                  <div key={i} className="rounded-2xl bg-[#060b15]/60 border border-[#1a3353] p-6 flex flex-col gap-2">
-                    <span className="text-xl font-bold text-[#00c9a7] uppercase tracking-wider">{f.type.replace(/_/g, ' ')}</span>
-                    {f.excerpt && <p className="text-2xl text-white italic">"{f.excerpt}"</p>}
-                    {f.link_risk && <p className="text-xl text-amber-400">Link risk: {f.link_risk}</p>}
-                  </div>
-                ))}
+
+            {/* Summary */}
+            {r.summary && (
+              <div className="rounded-2xl bg-[#0d1a2d] border border-[#1a3353] p-8">
+                <p className="text-xl font-bold text-[#94a3b8] uppercase tracking-widest mb-3">Summary</p>
+                <p className="text-2xl text-white leading-relaxed">{r.summary}</p>
               </div>
             )}
-            {r.flags && r.flags.length === 0 && (
-              <p className="text-2xl text-emerald-400">No suspicious flags detected.</p>
+
+            {/* Signals */}
+            {r.signals && r.signals.length > 0 && (
+              <div className="rounded-2xl bg-[#0d1a2d] border border-[#1a3353] p-8">
+                <p className="text-xl font-bold text-[#94a3b8] uppercase tracking-widest mb-4">Scam Signals</p>
+                <ul className="flex flex-col gap-3">
+                  {r.signals.map((s, i) => (
+                    <li key={i} className="flex items-start gap-3 text-2xl text-white">
+                      <span className="mt-1 h-3 w-3 shrink-0 rounded-full bg-rose-500" />
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Explanation */}
+            {r.explanation && (
+              <div className="rounded-2xl bg-[#0d1a2d] border border-[#1a3353] p-8">
+                <p className="text-xl font-bold text-[#94a3b8] uppercase tracking-widest mb-3">What This Means</p>
+                <p className="text-2xl text-[#94a3b8] leading-relaxed">{r.explanation}</p>
+              </div>
+            )}
+
+            {/* Tips */}
+            {r.tips && r.tips.length > 0 && (
+              <div className="rounded-2xl bg-[#0d1a2d] border border-[#1a3353] p-8">
+                <p className="text-xl font-bold text-[#94a3b8] uppercase tracking-widest mb-4">What To Do</p>
+                <ul className="flex flex-col gap-3">
+                  {r.tips.map((t, i) => (
+                    <li key={i} className="flex items-start gap-3 text-2xl text-[#00c9a7]">
+                      <span className="mt-1 h-3 w-3 shrink-0 rounded-full bg-[#00c9a7]" />
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
         );
@@ -404,7 +441,7 @@ export default function Home() {
       if (fileStatus === 'success' && fileResult) {
         const r = fileResult;
         return (
-          <div className={`w-full rounded-3xl border-2 p-10 flex flex-col gap-8 ${riskBg(r.risk)}`}>
+          <div className={`results-content w-full rounded-3xl border-2 p-10 flex flex-col gap-8 ${riskBg(r.risk)}`}>
             <div className="flex items-center justify-between flex-wrap gap-4">
               <span className={`text-5xl font-extrabold uppercase tracking-wide ${riskColor(r.risk)}`}>{r.risk}</span>
               {r.score != null && (
@@ -445,7 +482,7 @@ export default function Home() {
       if (phoneStatus === 'success' && phoneResult) {
         const r = phoneResult;
         return (
-          <div className={`w-full rounded-3xl border-2 p-10 flex flex-col gap-8 ${riskBg(r.risk)}`}>
+          <div className={`results-content w-full rounded-3xl border-2 p-10 flex flex-col gap-8 ${riskBg(r.risk)}`}>
             <div className="flex items-center justify-between flex-wrap gap-4">
               <span className={`text-5xl font-extrabold uppercase tracking-wide ${riskColor(r.risk)}`}>{r.risk}</span>
               {r.is_scam != null && (
@@ -663,7 +700,7 @@ export default function Home() {
           </div>
 
           {/* Right Column — Results (60%) */}
-          <div className="flex w-full lg:w-[60%] flex-col items-center justify-center rounded-[2.5rem] bg-[#0d1a2d] p-16 border border-[#1a3353] shadow-2xl shadow-black/40 overflow-y-auto">
+          <div className="flex w-full lg:w-[60%] flex-col items-center justify-center rounded-[2.5rem] bg-[#0d1a2d] p-16 border border-[#1a3353] shadow-2xl shadow-black/40 overflow-y-auto [&:has(.results-content)]:justify-start">
             {renderResultsArea()}
           </div>
         </main>

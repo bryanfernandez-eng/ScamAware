@@ -7,7 +7,7 @@ client = OpenAI(api_key=settings.openai_api_key)
 def analyze_message(text: str):
     prompt = f"""
 You are ScamAware AI, a cybersecurity expert.
-Analyze this phone number for scam risk:
+Analyze this message for scam risk:
 {text}
 Return ONLY valid JSON:
 {{
