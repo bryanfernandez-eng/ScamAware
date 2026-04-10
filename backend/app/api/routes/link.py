@@ -1,18 +1,14 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from app.schemas.scan import LinkScanRequest, LinkScanResponse
+from app.services.link_scanner import scan_link
 
 router = APIRouter()
 
 
 @router.post("/scan/link", response_model=LinkScanResponse)
-def scan_link(body: LinkScanRequest):
-    # TODO: replace with real VirusTotal / Google Safe Browsing integration
-    return LinkScanResponse(
-        risk="dangerous",
-        score=0.94,
-        details={
-            "matched_feeds": ["Google Safe Browsing", "OpenPhish"],
-            "threat_types": ["phishing", "malware"],
-            "redirects_to": None,
-        },
-    )
+async def scan_link_route(body: LinkScanRequest):
+    try:
+        result = await scan_link(body.url)
+        return LinkScanResponse(**result)
+    except Exception as err:
+        raise HTTPException(status_code=502, detail=f"VirusTotal error: {err}")
