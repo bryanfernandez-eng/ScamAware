@@ -17,7 +17,7 @@ document.addEventListener('click', (e) => {
 
   e.preventDefault();
 
-  chrome.runtime.sendMessage({ type: 'SCAN_URL', url }, (response) => {
+  chrome.runtime.sendMessage({ type: 'SCAN_URL', url, sourceUrl: window.location.href }, (response) => {
     if (chrome.runtime.lastError) {
       // Service worker not reachable — fail open
       window.location.href = url;
