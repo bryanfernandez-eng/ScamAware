@@ -12,6 +12,16 @@ export default function Home() {
   const [linkError, setLinkError] = useState(null);
 
   const tabs = ['Link', 'Message', 'File', 'Phone'];
+  const [bannerDismissed, setBannerDismissed] = useState(
+    () => localStorage.getItem('ext-banner-dismissed') === 'true'
+  );
+
+  const dismissBanner = () => {
+    localStorage.setItem('ext-banner-dismissed', 'true');
+    setBannerDismissed(true);
+  };
+
+  const [showExtDemo, setShowExtDemo] = useState(false);
 
   const handleLinkSubmit = async () => {
     if (!urlInput.trim()) return;
@@ -209,7 +219,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070e1a] p-12 lg:p-16 xl:p-24 font-sans text-white">
+    <div className="h-screen overflow-hidden flex flex-col bg-[#070e1a] p-12 lg:p-16 xl:p-20 font-sans text-white">
       {/* Subtle grid overlay */}
       <div
         className="pointer-events-none fixed inset-0 opacity-[0.03]"
@@ -219,7 +229,7 @@ export default function Home() {
         }}
       />
 
-      <div className="relative mx-auto max-w-400">
+      <div className="relative mx-auto max-w-400 flex flex-col flex-1 min-h-0 w-full">
         {/* Header */}
         <header className="mb-16 flex flex-col items-start gap-10 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex items-center gap-6">
@@ -250,15 +260,125 @@ export default function Home() {
           </nav>
         </header>
 
+        {/* Chrome Extension Banner */}
+        {!bannerDismissed && (
+          <div className="mb-6 flex items-center justify-between gap-6 rounded-2xl border border-[#00c9a7]/20 bg-[#00c9a7]/5 px-8 py-5">
+            <div className="flex items-center gap-5">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#00c9a7]/10 border border-[#00c9a7]/20">
+                <svg className="h-7 w-7 text-[#00c9a7]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-lg font-semibold text-white">Get real-time protection while you browse</p>
+                <p className="text-base text-[#94a3b8]">The ScamAware Chrome Extension blocks dangerous links and downloads automatically — no manual checking needed.</p>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-4">
+              <button
+                onClick={() => setShowExtDemo(true)}
+                className="rounded-xl border border-[#00c9a7]/40 px-7 py-3 text-base font-bold text-[#00c9a7] hover:bg-[#00c9a7]/10 transition-colors whitespace-nowrap"
+              >
+                See it in Action
+              </button>
+              <a
+                href="https://chrome.google.com/webstore"
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-xl bg-[#00c9a7] px-7 py-3 text-base font-bold text-[#060b15] hover:bg-[#00b396] transition-colors whitespace-nowrap"
+              >
+                Add to Chrome
+              </a>
+              <button
+                onClick={dismissBanner}
+                className="text-[#2d4a6a] hover:text-[#94a3b8] transition-colors p-1"
+                aria-label="Dismiss"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Extension Demo Modal */}
+        {showExtDemo && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-8" onClick={() => setShowExtDemo(false)}>
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+            <div className="relative w-full max-w-2xl rounded-3xl border border-[#1a3353] bg-[#0d1a2d] shadow-2xl shadow-black/60 overflow-hidden" onClick={e => e.stopPropagation()}>
+
+              {/* Modal header */}
+              <div className="flex items-center justify-between border-b border-[#1a3353] px-10 py-7">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Chrome Extension Demo</h2>
+                  <p className="mt-1 text-base text-[#94a3b8]">This is what ScamAware shows when you visit a dangerous site</p>
+                </div>
+                <button onClick={() => setShowExtDemo(false)} className="text-[#2d4a6a] hover:text-white transition-colors p-1">
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Simulated warning card */}
+              <div className="px-10 py-8">
+                <div className="rounded-2xl border border-[#1a3353] bg-[#060b15] p-8">
+                  {/* Logo */}
+                  <div className="flex items-center gap-3 mb-7">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#00c9a7]/10 border border-[#00c9a7]/30">
+                      <svg className="h-5 w-5 text-[#00c9a7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    </div>
+                    <span className="text-lg font-extrabold text-white">Scam<span className="text-[#00c9a7]">Aware</span></span>
+                  </div>
+
+                  {/* Risk badge */}
+                  <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-red-500/40 bg-red-500/10 py-6 mb-6 text-center">
+                    <span className="text-xs font-bold uppercase tracking-widest text-red-400/70 mb-1">Risk Assessment</span>
+                    <span className="text-4xl font-black text-red-400">Dangerous</span>
+                    <span className="mt-2 text-sm text-white/50">Confidence: 94/100</span>
+                  </div>
+
+                  {/* URL */}
+                  <div className="rounded-xl border border-[#1a3353] bg-[#070e1a] px-5 py-4 mb-3">
+                    <p className="text-xs font-bold uppercase tracking-widest text-[#94a3b8] mb-2">Scanned URL</p>
+                    <p className="font-mono text-sm text-[#94a3b8] break-all">http://malware.wicar.org/data/eicar.com</p>
+                  </div>
+                  <p className="text-sm text-[#2d4a6a] mb-7">ScamAware intercepted this link before you navigated to it.</p>
+
+                  {/* Buttons */}
+                  <div className="flex gap-4">
+                    <div className="flex-1 rounded-xl bg-[#1a3353] py-4 text-center text-base font-bold text-white cursor-default">Go Back</div>
+                    <div className="flex-1 rounded-xl bg-[#00c9a7] py-4 text-center text-base font-bold text-[#060b15] cursor-default">Proceed Anyway</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Install steps */}
+              <div className="border-t border-[#1a3353] px-10 py-7">
+                <p className="text-sm font-semibold text-[#94a3b8] mb-4">To install the extension locally:</p>
+                <ol className="flex flex-col gap-2 text-sm text-[#94a3b8]">
+                  <li className="flex gap-3"><span className="text-[#00c9a7] font-bold">1.</span> Open <span className="font-mono text-white mx-1">chrome://extensions</span> and enable Developer mode</li>
+                  <li className="flex gap-3"><span className="text-[#00c9a7] font-bold">2.</span> Click <span className="font-semibold text-white mx-1">Load unpacked</span> and select the <span className="font-mono text-white mx-1">extension/</span> folder</li>
+                  <li className="flex gap-3"><span className="text-[#00c9a7] font-bold">3.</span> The ScamAware icon appears in your toolbar — you're protected</li>
+                </ol>
+              </div>
+
+            </div>
+          </div>
+        )}
+
         {/* Main Content */}
-        <main className="flex min-h-[800px] flex-col gap-12 lg:flex-row">
+        <main className="flex flex-1 min-h-0 flex-col gap-12 lg:flex-row">
           {/* Left Column — Input (40%) */}
-          <div className="flex w-full lg:w-[40%] flex-col rounded-[2.5rem] bg-[#0d1a2d] p-16 border border-[#1a3353] shadow-2xl shadow-black/40">
+          <div className="flex w-full lg:w-[40%] flex-col rounded-[2.5rem] bg-[#0d1a2d] p-16 border border-[#1a3353] shadow-2xl shadow-black/40 overflow-y-auto">
             {renderInputArea()}
           </div>
 
           {/* Right Column — Results (60%) */}
-          <div className="flex w-full lg:w-[60%] flex-col items-center justify-center rounded-[2.5rem] bg-[#0d1a2d] p-16 border border-[#1a3353] shadow-2xl shadow-black/40">
+          <div className="flex w-full lg:w-[60%] flex-col items-center justify-center rounded-[2.5rem] bg-[#0d1a2d] p-16 border border-[#1a3353] shadow-2xl shadow-black/40 overflow-y-auto">
             {renderResultsArea()}
           </div>
         </main>

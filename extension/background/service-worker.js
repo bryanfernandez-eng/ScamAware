@@ -66,8 +66,7 @@ async function scanUrl(url) {
   return data;
 }
 
-function redirectToWarning(tabId, url, risk, score, context = 'page') {
-  const prevUrl = tabSafeUrl.get(tabId) || '';
+function redirectToWarning(tabId, url, risk, score, context = 'page', prevUrl = '') {
   const params = new URLSearchParams({ url, risk, score, context, prevUrl });
   const warningUrl = chrome.runtime.getURL(`warning/warning.html?${params}`);
   chrome.tabs.update(tabId, { url: warningUrl });
@@ -117,7 +116,7 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type !== 'SCAN_URL') return;
 
-  const { url } = message;
+  const { url, sourceUrl } = message;
   const tabId = sender.tab?.id;
 
   (async () => {
@@ -133,7 +132,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (data.risk === 'safe') {
         sendResponse({ safe: true });
       } else {
-        redirectToWarning(tabId, url, data.risk, data.score, 'link');
+        // sourceUrl is where the user clicked the link — always use it as prevUrl
+        redirectToWarning(tabId, url, data.risk, data.score, 'link', sourceUrl);
         sendResponse({ safe: false });
       }
     } catch (err) {

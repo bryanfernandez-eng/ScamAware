@@ -24,16 +24,21 @@ const notes = {
 document.getElementById('context-note').textContent = notes[context] || notes.page;
 
 // --- Go Back ---
-document.getElementById('btn-back').addEventListener('click', () => {
+document.getElementById('btn-back').addEventListener('click', async () => {
   if (context === 'download') {
     window.close();
     return;
   }
 
   if (prevUrl) {
+    // Bypass the scan for the page we're going back to so the user
+    // isn't intercepted again immediately after clicking Go Back
+    const { bypasses } = await chrome.storage.local.get({ bypasses: {} });
+    bypasses[prevUrl] = Date.now();
+    await chrome.storage.local.set({ bypasses });
+
     window.location.href = prevUrl;
   } else {
-    // No previous page tracked — open a new tab
     chrome.tabs.create({});
   }
 });
