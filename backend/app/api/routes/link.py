@@ -9,6 +9,6 @@ router = APIRouter()
 async def scan_link_route(body: LinkScanRequest):
     try:
         result = await scan_link(body.url)
-        return LinkScanResponse(**result)
+        return LinkScanResponse(url=body.url, **result)
     except Exception as err:
-        raise HTTPException(status_code=502, detail=f"VirusTotal error: {err}")
+        raise HTTPException(status_code=502, detail=f"Link scan error: {err}")

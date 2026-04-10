@@ -23,12 +23,16 @@ class PhoneScanRequest(BaseModel):
 PhoneRequest = PhoneScanRequest
 
 # --- Responses ---
+class LinkDetails(BaseModel):
+    matched_feeds: List[str] = []
+    threat_types: List[str] = []
+    redirects_to: Optional[str] = None
+
 class LinkScanResponse(BaseModel):
     url: str
     risk: RiskLevel
     score: float
-    threats: List[str]
-    details: str
+    details: LinkDetails
 
 class TextFlag(BaseModel):
     type: str

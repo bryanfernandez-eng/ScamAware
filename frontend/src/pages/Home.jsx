@@ -11,6 +11,24 @@ export default function Home() {
   const [linkResult, setLinkResult] = useState(null);
   const [linkError, setLinkError] = useState(null);
 
+  // Message Analysis State
+  const [messageInput, setMessageInput] = useState('');
+  const [messageStatus, setMessageStatus] = useState('idle');
+  const [messageResult, setMessageResult] = useState(null);
+  const [messageError, setMessageError] = useState(null);
+
+  // Phone Analysis State
+  const [phoneInput, setPhoneInput] = useState('');
+  const [phoneStatus, setPhoneStatus] = useState('idle');
+  const [phoneResult, setPhoneResult] = useState(null);
+  const [phoneError, setPhoneError] = useState(null);
+
+  // File Analysis State
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [fileStatus, setFileStatus] = useState('idle');
+  const [fileResult, setFileResult] = useState(null);
+  const [fileError, setFileError] = useState(null);
+
   const tabs = ['Link', 'Message', 'File', 'Phone'];
 
   const handleLinkSubmit = async () => {
@@ -26,6 +44,59 @@ export default function Home() {
       console.error(err);
       setLinkError(err.message || 'An error occurred while scanning the link.');
       setLinkStatus('error');
+    }
+  };
+
+  const handleMessageSubmit = async () => {
+    if (!messageInput.trim()) return;
+    setMessageStatus('loading');
+    setMessageError(null);
+    setMessageResult(null);
+    try {
+      const data = await api.post('/scan/text', { content: messageInput });
+      setMessageResult(data);
+      setMessageStatus('success');
+    } catch (err) {
+      console.error(err);
+      setMessageError(err.message || 'An error occurred while scanning the message.');
+      setMessageStatus('error');
+    }
+  };
+
+  const handlePhoneSubmit = async () => {
+    if (!phoneInput.trim()) return;
+    setPhoneStatus('loading');
+    setPhoneError(null);
+    setPhoneResult(null);
+    try {
+      const data = await api.post('/scan/phone', { phone: phoneInput });
+      setPhoneResult(data);
+      setPhoneStatus('success');
+    } catch (err) {
+      console.error(err);
+      setPhoneError(err.message || 'An error occurred while scanning the phone number.');
+      setPhoneStatus('error');
+    }
+  };
+
+  const handleFileSubmit = async () => {
+    if (!selectedFile) return;
+    setFileStatus('loading');
+    setFileError(null);
+    setFileResult(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api';
+      const res = await fetch(`${BASE_URL}/scan/file`, { method: 'POST', body: formData });
+      if (!res.ok) throw new Error(`API error ${res.status}`);
+      const data = await res.json();
+      setFileResult(data);
+      setFileStatus('success');
+    } catch (err) {
+      console.error(err);
+      setFileError(err.message || 'An error occurred while scanning the file.');
+      setFileStatus('error');
     }
   };
 
@@ -82,11 +153,27 @@ export default function Home() {
               <textarea
                 id="message-input"
                 placeholder="Paste the suspicious text here..."
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
                 className="w-full flex-1 rounded-2xl border-2 border-[#1a3353] bg-[#060b15] p-8 text-2xl text-white shadow-sm focus:border-[#00c9a7] focus:outline-none focus:ring-4 focus:ring-[#00c9a7]/20 transition-all placeholder:text-[#2d4a6a] resize-none min-h-75"
               />
             </div>
-            <button className="mt-auto w-full rounded-2xl bg-[#00c9a7] px-10 py-8 text-3xl font-bold text-[#060b15] shadow-lg hover:bg-[#00b396] transition-colors focus:outline-none focus:ring-4 focus:ring-[#00c9a7]/40">
-              Analyze Message
+            <button
+              onClick={handleMessageSubmit}
+              disabled={messageStatus === 'loading' || !messageInput.trim()}
+              className="mt-auto w-full rounded-2xl bg-[#00c9a7] px-10 py-8 text-3xl font-bold text-[#060b15] shadow-lg hover:bg-[#00b396] transition-colors focus:outline-none focus:ring-4 focus:ring-[#00c9a7]/40 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-4"
+            >
+              {messageStatus === 'loading' ? (
+                <>
+                  <svg className="animate-spin h-8 w-8 text-[#060b15]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Analyzing...
+                </>
+              ) : (
+                'Analyze Message'
+              )}
             </button>
           </div>
         );
@@ -107,14 +194,47 @@ export default function Home() {
                   <svg className="mb-6 h-20 w-20 text-[#00c9a7]/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
-                  <p className="mb-3 text-3xl text-[#94a3b8]"><span className="font-bold text-white">Click to upload</span> or drag and drop</p>
-                  <p className="text-2xl text-[#2d4a6a]">PDF, DOCX, ZIP (MAX. 50MB)</p>
+                  {selectedFile ? (
+                    <>
+                      <p className="mb-3 text-3xl text-white font-bold">{selectedFile.name}</p>
+                      <p className="text-2xl text-[#00c9a7]">{(selectedFile.size / 1024).toFixed(1)} KB — click to change</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="mb-3 text-3xl text-[#94a3b8]"><span className="font-bold text-white">Click to upload</span> or drag and drop</p>
+                      <p className="text-2xl text-[#2d4a6a]">PDF, DOCX, ZIP (MAX. 50MB)</p>
+                    </>
+                  )}
                 </div>
-                <input id="file-upload" type="file" className="hidden" />
+                <input
+                  id="file-upload"
+                  type="file"
+                  className="hidden"
+                  onChange={(e) => {
+                    setSelectedFile(e.target.files[0] ?? null);
+                    setFileStatus('idle');
+                    setFileResult(null);
+                    setFileError(null);
+                  }}
+                />
               </label>
             </div>
-            <button className="mt-auto w-full rounded-2xl bg-[#00c9a7] px-10 py-8 text-3xl font-bold text-[#060b15] shadow-lg hover:bg-[#00b396] transition-colors focus:outline-none focus:ring-4 focus:ring-[#00c9a7]/40">
-              Analyze File
+            <button
+              onClick={handleFileSubmit}
+              disabled={fileStatus === 'loading' || !selectedFile}
+              className="mt-auto w-full rounded-2xl bg-[#00c9a7] px-10 py-8 text-3xl font-bold text-[#060b15] shadow-lg hover:bg-[#00b396] transition-colors focus:outline-none focus:ring-4 focus:ring-[#00c9a7]/40 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-4"
+            >
+              {fileStatus === 'loading' ? (
+                <>
+                  <svg className="animate-spin h-8 w-8 text-[#060b15]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Analyzing...
+                </>
+              ) : (
+                'Analyze File'
+              )}
             </button>
           </div>
         );
@@ -132,11 +252,28 @@ export default function Home() {
                 id="phone-input"
                 type="tel"
                 placeholder="+1 (555) 000-0000"
+                value={phoneInput}
+                onChange={(e) => setPhoneInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handlePhoneSubmit()}
                 className="w-full rounded-2xl border-2 border-[#1a3353] bg-[#060b15] p-8 text-2xl text-white shadow-sm focus:border-[#00c9a7] focus:outline-none focus:ring-4 focus:ring-[#00c9a7]/20 transition-all placeholder:text-[#2d4a6a]"
               />
             </div>
-            <button className="mt-auto w-full rounded-2xl bg-[#00c9a7] px-10 py-8 text-3xl font-bold text-[#060b15] shadow-lg hover:bg-[#00b396] transition-colors focus:outline-none focus:ring-4 focus:ring-[#00c9a7]/40">
-              Lookup Number
+            <button
+              onClick={handlePhoneSubmit}
+              disabled={phoneStatus === 'loading' || !phoneInput.trim()}
+              className="mt-auto w-full rounded-2xl bg-[#00c9a7] px-10 py-8 text-3xl font-bold text-[#060b15] shadow-lg hover:bg-[#00b396] transition-colors focus:outline-none focus:ring-4 focus:ring-[#00c9a7]/40 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-4"
+            >
+              {phoneStatus === 'loading' ? (
+                <>
+                  <svg className="animate-spin h-8 w-8 text-[#060b15]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Looking up...
+                </>
+              ) : (
+                'Lookup Number'
+              )}
             </button>
           </div>
         );
@@ -146,50 +283,198 @@ export default function Home() {
     }
   };
 
+  const riskColor = (risk) => {
+    const r = (risk ?? '').toLowerCase();
+    if (r === 'high' || r === 'dangerous') return 'text-rose-400';
+    if (r === 'medium' || r === 'suspicious') return 'text-amber-400';
+    return 'text-emerald-400';
+  };
+
+  const riskBg = (risk) => {
+    const r = (risk ?? '').toLowerCase();
+    if (r === 'high' || r === 'dangerous') return 'bg-rose-950/40 border-rose-800/50';
+    if (r === 'medium' || r === 'suspicious') return 'bg-amber-950/40 border-amber-800/50';
+    return 'bg-emerald-950/40 border-emerald-800/50';
+  };
+
+  const renderIdlePlaceholder = (icon, hint) => (
+    <div className="flex flex-col items-center text-center max-w-lg">
+      <div className="mb-10 flex h-40 w-40 items-center justify-center rounded-full bg-[#060b15] border-2 border-dashed border-[#1a3353]">
+        <svg className="h-20 w-20 text-[#1a3353]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          {icon}
+        </svg>
+      </div>
+      <h3 className="text-4xl font-bold text-white">Results Area</h3>
+      <p className="mt-6 text-2xl text-[#2d4a6a]">{hint}</p>
+    </div>
+  );
+
+  const renderLoading = (label = 'Analyzing...') => (
+    <div className="flex flex-col items-center text-center max-w-lg">
+      <div className="mb-10 flex h-40 w-40 items-center justify-center rounded-full border-4 border-[#00c9a7] border-t-transparent animate-spin" />
+      <h3 className="text-4xl font-bold text-white">{label}</h3>
+      <p className="mt-6 text-2xl text-[#94a3b8]">Checking threat intelligence feeds.</p>
+    </div>
+  );
+
+  const renderError = (msg) => (
+    <div className="flex flex-col items-center text-center max-w-lg">
+      <div className="mb-10 flex h-40 w-40 items-center justify-center rounded-full bg-rose-950/40 border-2 border-dashed border-rose-800/50">
+        <svg className="h-20 w-20 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <h3 className="text-4xl font-bold text-white">Scan Failed</h3>
+      <p className="mt-6 text-2xl text-rose-400">{msg}</p>
+    </div>
+  );
+
   const renderResultsArea = () => {
+    // ── Link ──────────────────────────────────────────────────────────────
     if (activeTab === 'Link') {
-      if (linkStatus === 'idle') {
+      if (linkStatus === 'idle') return renderIdlePlaceholder(
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />,
+        'Enter a URL to get started'
+      );
+      if (linkStatus === 'loading') return renderLoading();
+      if (linkStatus === 'error') return renderError(linkError);
+      if (linkStatus === 'success' && linkResult) return (
+        <div className="w-full flex-1 flex flex-col overflow-y-auto pr-4">
+          <ResultCard result={linkResult} />
+        </div>
+      );
+    }
+
+    // ── Message ───────────────────────────────────────────────────────────
+    if (activeTab === 'Message') {
+      if (messageStatus === 'idle') return renderIdlePlaceholder(
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />,
+        'Paste a message to get started'
+      );
+      if (messageStatus === 'loading') return renderLoading();
+      if (messageStatus === 'error') return renderError(messageError);
+      if (messageStatus === 'success' && messageResult) {
+        const r = messageResult;
         return (
-          <div className="flex flex-col items-center text-center max-w-lg">
-            <div className="mb-10 flex h-40 w-40 items-center justify-center rounded-full bg-[#060b15] border-2 border-dashed border-[#1a3353]">
-              <svg className="h-20 w-20 text-[#1a3353]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-              </svg>
+          <div className={`w-full rounded-3xl border-2 p-10 flex flex-col gap-8 ${riskBg(r.risk)}`}>
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <span className={`text-5xl font-extrabold uppercase tracking-wide ${riskColor(r.risk)}`}>{r.risk}</span>
+              {r.score != null && (
+                <span className="text-3xl font-bold text-[#94a3b8]">Score: <span className="text-white">{(r.score * 100).toFixed(0)}%</span></span>
+              )}
             </div>
-            <h3 className="text-4xl font-bold text-white">Results Area</h3>
-            <p className="mt-6 text-2xl text-[#2d4a6a]">Enter a URL to get started</p>
+            {r.flags && r.flags.length > 0 && (
+              <div className="flex flex-col gap-4">
+                <p className="text-2xl font-bold text-[#94a3b8] uppercase tracking-widest">Flags</p>
+                {r.flags.map((f, i) => (
+                  <div key={i} className="rounded-2xl bg-[#060b15]/60 border border-[#1a3353] p-6 flex flex-col gap-2">
+                    <span className="text-xl font-bold text-[#00c9a7] uppercase tracking-wider">{f.type.replace(/_/g, ' ')}</span>
+                    {f.excerpt && <p className="text-2xl text-white italic">"{f.excerpt}"</p>}
+                    {f.link_risk && <p className="text-xl text-amber-400">Link risk: {f.link_risk}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
+            {r.flags && r.flags.length === 0 && (
+              <p className="text-2xl text-emerald-400">No suspicious flags detected.</p>
+            )}
           </div>
         );
       }
+    }
 
-      if (linkStatus === 'loading') {
+    // ── File ──────────────────────────────────────────────────────────────
+    if (activeTab === 'File') {
+      if (fileStatus === 'idle') return renderIdlePlaceholder(
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />,
+        'Upload a file to get started'
+      );
+      if (fileStatus === 'loading') return renderLoading('Scanning file...');
+      if (fileStatus === 'error') return renderError(fileError);
+      if (fileStatus === 'success' && fileResult) {
+        const r = fileResult;
         return (
-          <div className="flex flex-col items-center text-center max-w-lg">
-            <div className="mb-10 flex h-40 w-40 items-center justify-center rounded-full border-4 border-[#00c9a7] border-t-transparent animate-spin" />
-            <h3 className="text-4xl font-bold text-white">Analyzing...</h3>
-            <p className="mt-6 text-2xl text-[#94a3b8]">Checking threat intelligence feeds.</p>
-          </div>
-        );
-      }
-
-      if (linkStatus === 'error') {
-        return (
-          <div className="flex flex-col items-center text-center max-w-lg">
-            <div className="mb-10 flex h-40 w-40 items-center justify-center rounded-full bg-rose-950/40 border-2 border-dashed border-rose-800/50">
-              <svg className="h-20 w-20 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
+          <div className={`w-full rounded-3xl border-2 p-10 flex flex-col gap-8 ${riskBg(r.risk)}`}>
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <span className={`text-5xl font-extrabold uppercase tracking-wide ${riskColor(r.risk)}`}>{r.risk}</span>
+              {r.score != null && (
+                <span className="text-3xl font-bold text-[#94a3b8]">Score: <span className="text-white">{(r.score * 100).toFixed(0)}%</span></span>
+              )}
             </div>
-            <h3 className="text-4xl font-bold text-white">Scan Failed</h3>
-            <p className="mt-6 text-2xl text-rose-400">{linkError}</p>
+            {r.file_hash && (
+              <div className="rounded-2xl bg-[#060b15]/60 border border-[#1a3353] p-6">
+                <p className="text-xl font-bold text-[#94a3b8] uppercase tracking-widest mb-2">File Hash</p>
+                <p className="text-xl text-white font-mono break-all">{r.file_hash}</p>
+              </div>
+            )}
+            {r.threats && r.threats.length > 0 ? (
+              <div className="flex flex-col gap-4">
+                <p className="text-2xl font-bold text-[#94a3b8] uppercase tracking-widest">Threats Detected</p>
+                {r.threats.map((t, i) => (
+                  <div key={i} className="rounded-2xl bg-[#060b15]/60 border border-rose-800/50 p-6">
+                    <p className="text-2xl text-rose-400">{typeof t === 'string' ? t : JSON.stringify(t)}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-2xl text-emerald-400">No threats detected.</p>
+            )}
           </div>
         );
       }
+    }
 
-      if (linkStatus === 'success' && linkResult) {
+    // ── Phone ─────────────────────────────────────────────────────────────
+    if (activeTab === 'Phone') {
+      if (phoneStatus === 'idle') return renderIdlePlaceholder(
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />,
+        'Enter a phone number to get started'
+      );
+      if (phoneStatus === 'loading') return renderLoading('Looking up number...');
+      if (phoneStatus === 'error') return renderError(phoneError);
+      if (phoneStatus === 'success' && phoneResult) {
+        const r = phoneResult;
         return (
-          <div className="w-full flex-1 flex flex-col overflow-y-auto pr-4">
-            <ResultCard result={linkResult} />
+          <div className={`w-full rounded-3xl border-2 p-10 flex flex-col gap-8 ${riskBg(r.risk)}`}>
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <span className={`text-5xl font-extrabold uppercase tracking-wide ${riskColor(r.risk)}`}>{r.risk}</span>
+              {r.is_scam != null && (
+                <span className={`text-3xl font-bold ${r.is_scam ? 'text-rose-400' : 'text-emerald-400'}`}>
+                  {r.is_scam ? 'Scam Confirmed' : 'Not a Known Scam'}
+                </span>
+              )}
+            </div>
+            {r.summary && (
+              <p className="text-2xl text-[#94a3b8]">{r.summary}</p>
+            )}
+            {r.signals && r.signals.length > 0 && (
+              <div className="flex flex-col gap-3">
+                <p className="text-2xl font-bold text-[#94a3b8] uppercase tracking-widest">Signals</p>
+                {r.signals.map((s, i) => (
+                  <div key={i} className="flex items-start gap-4 rounded-2xl bg-[#060b15]/60 border border-[#1a3353] p-6">
+                    <span className="mt-1 h-3 w-3 shrink-0 rounded-full bg-[#00c9a7]" />
+                    <p className="text-2xl text-white">{s}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {r.explanation && (
+              <div className="rounded-2xl bg-[#060b15]/60 border border-[#1a3353] p-6">
+                <p className="text-xl font-bold text-[#94a3b8] uppercase tracking-widest mb-3">Explanation</p>
+                <p className="text-2xl text-white">{r.explanation}</p>
+              </div>
+            )}
+            {r.tips && r.tips.length > 0 && (
+              <div className="flex flex-col gap-3">
+                <p className="text-2xl font-bold text-[#94a3b8] uppercase tracking-widest">Tips</p>
+                {r.tips.map((t, i) => (
+                  <div key={i} className="flex items-start gap-4 rounded-2xl bg-[#060b15]/60 border border-[#1a3353] p-6">
+                    <span className="mt-1 h-3 w-3 shrink-0 rounded-full bg-amber-400" />
+                    <p className="text-2xl text-white">{t}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         );
       }
