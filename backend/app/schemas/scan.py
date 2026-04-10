@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 from enum import Enum
 from typing import List, Optional
 from pydantic import BaseModel
@@ -12,7 +11,6 @@ class RiskLevel(str, Enum):
 
 
 # --- Requests ---
-
 class LinkScanRequest(BaseModel):
     url: str
 
@@ -22,13 +20,15 @@ class TextScanRequest(BaseModel):
 class PhoneScanRequest(BaseModel):
     phone: str
 
+PhoneRequest = PhoneScanRequest
 
 # --- Responses ---
-
 class LinkScanResponse(BaseModel):
+    url: str
     risk: RiskLevel
     score: float
-    details: dict
+    threats: List[str]
+    details: str
 
 class TextFlag(BaseModel):
     type: str
