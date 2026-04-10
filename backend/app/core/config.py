@@ -12,6 +12,7 @@ class Settings(BaseSettings):
 
     gemini_api_key: str = ""
     gemini_model: str = "gemini-2.0-flash"
+    openai_api_key: str = ""
 
     class Config:
         env_file = str(_ENV_FILE)
