@@ -1,5 +1,7 @@
+from __future__ import annotations
 from enum import Enum
-from pydantic import BaseModel, HttpUrl
+from typing import List, Optional
+from pydantic import BaseModel
 
 
 class RiskLevel(str, Enum):
@@ -8,13 +10,45 @@ class RiskLevel(str, Enum):
     dangerous = "dangerous"
 
 
+# --- Requests ---
 class LinkScanRequest(BaseModel):
-    url: HttpUrl
-
-
-class LinkScanResponse(BaseModel):
-    risk: RiskLevel
-    score: float          # 0.0 – 1.0
     url: str
-    threats: list[str]    # e.g. ["phishing", "malware"]
-    details: str          # human-readable Gemini summary
+
+class TextScanRequest(BaseModel):
+    content: str
+
+class PhoneScanRequest(BaseModel):
+    phone: str
+
+PhoneRequest = PhoneScanRequest
+
+# --- Responses ---
+class LinkScanResponse(BaseModel):
+    url: str
+    risk: RiskLevel
+    score: float
+    threats: List[str]
+    details: str
+
+class TextFlag(BaseModel):
+    type: str
+    excerpt: str
+    link_risk: Optional[RiskLevel] = None
+
+class TextScanResponse(BaseModel):
+    risk: RiskLevel
+    score: float
+    flags: List[TextFlag]
+
+class FileScanResponse(BaseModel):
+    risk: RiskLevel
+    score: float
+    file_hash: str
+    threats: List[str]
+
+class PhoneScanResponse(BaseModel):
+    risk: RiskLevel
+    reports: int
+    carrier: Optional[str] = None
+    location: Optional[str] = None
+    scam_types: List[str]

@@ -1,10 +1,10 @@
 import json
 import re
-import urllib.parse
-
-from app.core.gemini import get_client
+from openai import OpenAI
 from app.core.config import settings
 from app.schemas.scan import LinkScanResponse, RiskLevel
+
+client = OpenAI(api_key=settings.openai_api_key)
 
 _PROMPT = """\
 You are a cybersecurity analyst. Analyze the following URL for scam, phishing, \
@@ -30,8 +30,6 @@ When assessing, consider:
 
 
 def _parse_response(raw: str, url: str) -> LinkScanResponse:
-    """Extract JSON from Gemini output and build the response model."""
-    # Strip any accidental markdown fences
     cleaned = re.sub(r"```(?:json)?", "", raw).strip().rstrip("`").strip()
     data = json.loads(cleaned)
     return LinkScanResponse(
@@ -44,12 +42,13 @@ def _parse_response(raw: str, url: str) -> LinkScanResponse:
 
 
 async def scan_link(url: str) -> LinkScanResponse:
-    client = get_client()
     prompt = _PROMPT.format(url=url)
 
-    response = client.models.generate_content(
-        model=settings.gemini_model,
-        contents=prompt,
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+        response_format={"type": "json_object"}
     )
 
-    return _parse_response(response.text, url)
+    raw = response.choices[0].message.content
+    return _parse_response(raw, url)

@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.schemas.scan import PhoneRequest
+from app.schemas.phone import PhoneRequest
 from app.services.phone_services import analyze_phone
 import json
 
